@@ -124,6 +124,8 @@ public class Socket {
 
     private String endpointUri = null;
 
+    private List<NameValuePair> params = new ArrayList<NameValuePair>();
+
     private final Set<IErrorCallback> errorCallbacks = Collections.newSetFromMap(new HashMap<IErrorCallback, Boolean>());
 
     private final int heartbeatInterval;
@@ -171,6 +173,14 @@ public class Socket {
         this.timer = new Timer("Reconnect Timer for " + endpointUri);
     }
 
+    public Socket(final String endpointUri, final List<NameValuePair> params, final int heartbeatInterval){
+      log.trace("PhoenixSocket({})", endpointUri);
+      this.endpointUri = endpointUri;
+      this.params = params;
+      this.heartbeatInterval = heartbeatIntervalInMs;
+      this.timer = new Timer("Reconnect Timer for " + endpointUri);
+    }
+
     /**
      * Retrieve a channel instance for the specified topic
      *
@@ -193,7 +203,9 @@ public class Socket {
         // No support for ws:// or ws:// in okhttp. See https://github.com/square/okhttp/issues/1652
         final String httpUrl = this.endpointUri.replaceFirst("^ws:", "http:")
             .replaceFirst("^wss:", "https:");
-        final Request request = new Request.Builder().url(httpUrl).build();
+        RequestBuilder requestBuilder = new Request.Builder()
+        this.params.forEach((it) -> requestBuilder.addQueryParameter(it.getName(), it.getValue()));
+        final Request request = requestBuilder.url(httpUrl).build();
         webSocket = httpClient.newWebSocket(request, wsListener);
     }
 
